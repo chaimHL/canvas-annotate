@@ -49,9 +49,10 @@ class CanvasAnnotate {
 
 
     // 绘制
-    const rect0 = new Rectangle(0, this.ctx!, defaultColor, 0, 0, 100, 100)
-    const rect1 = new Rectangle(1, this.ctx!, defaultColor, 300, 0, 100, 100)
-    this.shapes.push(rect0, rect1)
+    const rect0 = new Rectangle('rect0', this.ctx!, defaultColor, 0, 0, 100, 100)
+    const rect1 = new Rectangle('rect1', this.ctx!, defaultColor, 300, 0, 100, 100)
+    const circle0 = new CircleCircle('circle0', this.ctx!, defaultColor, 200, 400, 50, 0, 2 * Math.PI)
+    this.shapes.push(rect0, rect1, circle0)
     this.draw()
     this.addShapeClickListener(rect0)
     this.addShapeClickListener(rect1)
@@ -106,7 +107,7 @@ class CanvasAnnotate {
 /** 所有形状的抽象类 */
 class BaseShape {
   listeners: { [key in EventEnum]?: ((e: any) => void)[] } = {}
-  constructor(public id: number, public ctx: CanvasRenderingContext2D, public color: string) { }
+  constructor(public id: string, public ctx: CanvasRenderingContext2D, public color: string) { }
 
   get path(): Path2D {
     return new Path2D()
@@ -119,8 +120,13 @@ class BaseShape {
     this.listeners[eventName]?.push(callback)
   }
 
+  // isPointInRegion(x: number, y: number): boolean {
+  //   return false
+  // }
+
+  // 判断点是否在路径区域内
   isPointInRegion(x: number, y: number): boolean {
-    return false
+    return this.ctx.isPointInPath(this.path, x, y)
   }
 
 }
@@ -137,7 +143,15 @@ class Rectangle extends BaseShape {
       }
     ]
   }
-  constructor(id: number, ctx: CanvasRenderingContext2D, color: string, public x: number, public y: number, public width: number, public height: number) {
+  constructor(
+    id: string,
+    ctx: CanvasRenderingContext2D,
+    color: string,
+    public x: number,
+    public y: number,
+    public width: number,
+    public height: number
+  ) {
     super(id, ctx, color)
   }
 
@@ -146,9 +160,26 @@ class Rectangle extends BaseShape {
     rectPath.rect(this.x, this.y, this.width, this.height)
     return rectPath
   }
+}
 
-  // 判断点是否在路径区域内
-  isPointInRegion(x: number, y: number): boolean {
-    return this.ctx.isPointInPath(this.path, x, y)
+/** 圆 */
+class CircleCircle extends BaseShape {
+  constructor(
+    id: string,
+    ctx: CanvasRenderingContext2D,
+    color: string,
+    public x: number,
+    public y: number,
+    public radius: number,
+    public startAngle: number,
+    public endAngle: number
+  ) {
+    super(id, ctx, color)
+  }
+
+  get path(): Path2D {
+    const rectPath = new Path2D()
+    rectPath.arc(this.x, this.y, this.radius, this.startAngle, this.endAngle)
+    return rectPath
   }
 }
