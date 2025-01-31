@@ -32,7 +32,7 @@ class CanvasAnnotate {
     }
     // 计算图片的缩放比例
     const scale = Math.min(
-      // 如果图片尺寸为 0（例如损坏的图片），会导致除以零的错误
+      // 如果图片损坏，则尺寸会为 0
       this.canvas.width / (this.img.width !== 0 ? this.img.width : 1),
       this.canvas.height / (this.img.height !== 0 ? this.img.height : 1)
     )
@@ -54,8 +54,11 @@ class CanvasAnnotate {
     const circle0 = new CircleCircle('circle0', this.ctx!, defaultColor, 200, 400, 50, 0, 2 * Math.PI)
     this.shapes.push(rect0, rect1, circle0)
     this.draw()
+
+    // 添加事件监听
     this.addShapeClickListener(rect0)
     this.addShapeClickListener(rect1)
+    // 处理事件监听
     this.handleListeners()
   }
 
@@ -71,15 +74,15 @@ class CanvasAnnotate {
   }
 
   draw() {
-    if (this.isDrawing) return;
-    this.isDrawing = true;
+    if (this.isDrawing) return
+    this.isDrawing = true
     this.ctx?.clearRect(0, 0, this.width, this.height)
     this.ctx!.drawImage(this.img, 0, 0, this.width, this.height)
     this.shapes.forEach(shape => {
       this.ctx!.fillStyle = shape.color
       this.ctx!.fill(shape.path)
     })
-    this.isDrawing = false;
+    this.isDrawing = false
   }
 
   handleListeners() {
@@ -99,14 +102,14 @@ class CanvasAnnotate {
     this.canvas.addEventListener(EventEnum.CLICK, handleClick)
 
     this.canvas.addEventListener('destroy', () => {
-      this.canvas?.removeEventListener(EventEnum.CLICK, handleClick);
-    });
+      this.canvas?.removeEventListener(EventEnum.CLICK, handleClick)
+    })
   }
 }
 
 /** 所有形状的抽象类 */
 class BaseShape {
-  listeners: { [key in EventEnum]?: ((e: any) => void)[] } = {}
+  listeners: { [key in EventEnum]?: ((e: MouseEvent) => void)[] } = {}
   constructor(public id: string, public ctx: CanvasRenderingContext2D, public color: string) { }
 
   get path(): Path2D {
@@ -120,10 +123,6 @@ class BaseShape {
     this.listeners[eventName]?.push(callback)
   }
 
-  // isPointInRegion(x: number, y: number): boolean {
-  //   return false
-  // }
-
   // 判断点是否在路径区域内
   isPointInRegion(x: number, y: number): boolean {
     return this.ctx.isPointInPath(this.path, x, y)
@@ -133,9 +132,9 @@ class BaseShape {
 
 /** 矩形 */
 class Rectangle extends BaseShape {
-  listeners: { [key in EventEnum]?: ((e: any) => void)[] } = {
+  listeners = {
     [EventEnum.CLICK]: [
-      (e) => {
+      (e: MouseEvent) => {
         const x = e.offsetX
         const y = e.offsetY
         const isInRegion = this.isPointInRegion(x, y)
@@ -155,7 +154,7 @@ class Rectangle extends BaseShape {
     super(id, ctx, color)
   }
 
-  get path(): Path2D {
+  get path() {
     const rectPath = new Path2D()
     rectPath.rect(this.x, this.y, this.width, this.height)
     return rectPath
@@ -177,7 +176,7 @@ class CircleCircle extends BaseShape {
     super(id, ctx, color)
   }
 
-  get path(): Path2D {
+  get path() {
     const rectPath = new Path2D()
     rectPath.arc(this.x, this.y, this.radius, this.startAngle, this.endAngle)
     return rectPath
