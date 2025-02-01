@@ -16,7 +16,7 @@ class CanvasAnnotate {
     this.ctx = this.canvas.getContext('2d')
     this.img = new Image()
     if (!this.canvas || !this.ctx) {
-      console.error('Canvas or Canvas context is null')
+      console.error('Canvas 或 Canvas context 为空')
       return
     }
     this.img.onload = this.initStage.bind(this)
@@ -27,7 +27,7 @@ class CanvasAnnotate {
   /** 将传入的图片绘制到画布 */
   initStage() {
     if (!this.canvas || !this.ctx || !this.img.complete) {
-      console.error('Canvas or ctx or img is not ready')
+      console.error('Canvas/ctx/img 没有准备完毕')
       return
     }
     // 计算图片的缩放比例
@@ -39,25 +39,18 @@ class CanvasAnnotate {
     this.width = this.img.width * scale
     this.height = this.img.height * scale
 
-    // 清除画布
-    this.ctx.clearRect(
-      0,
-      0,
-      this.canvas.width,
-      this.canvas.height
-    )
-
-
-    // 绘制
+    // 添加要绘制的图形
     const rect0 = new Rectangle('rect0', this.ctx!, defaultColor, 0, 0, 100, 100)
     const rect1 = new Rectangle('rect1', this.ctx!, defaultColor, 300, 0, 100, 100)
-    const circle0 = new CircleCircle('circle0', this.ctx!, defaultColor, 200, 400, 50, 0, 2 * Math.PI)
+    const circle0 = new CircleCircle('circle0', this.ctx!, defaultColor, 200, 200, 50, 0, 2 * Math.PI)
     this.shapes.push(rect0, rect1, circle0)
+    // 绘制
     this.draw()
 
-    // 添加事件监听
+    // 添加事件回调
     this.addShapeClickListener(rect0)
     this.addShapeClickListener(rect1)
+    this.addShapeClickListener(circle0)
     // 处理事件监听
     this.handleListeners()
   }
@@ -76,6 +69,7 @@ class CanvasAnnotate {
   draw() {
     if (this.isDrawing) return
     this.isDrawing = true
+    // 清除画布
     this.ctx?.clearRect(0, 0, this.width, this.height)
     this.ctx!.drawImage(this.img, 0, 0, this.width, this.height)
     this.shapes.forEach(shape => {
@@ -100,7 +94,6 @@ class CanvasAnnotate {
       this.draw()
     }
     this.canvas.addEventListener(EventEnum.CLICK, handleClick)
-
     this.canvas.addEventListener('destroy', () => {
       this.canvas?.removeEventListener(EventEnum.CLICK, handleClick)
     })
@@ -110,24 +103,24 @@ class CanvasAnnotate {
 /** 所有形状的抽象类 */
 class BaseShape {
   listeners: { [key in EventEnum]?: ((e: MouseEvent) => void)[] } = {}
-  constructor(public id: string, public ctx: CanvasRenderingContext2D, public color: string) { }
-
+  constructor(
+    public id: string,
+    public ctx: CanvasRenderingContext2D,
+    public color: string
+  ) { }
   get path(): Path2D {
     return new Path2D()
   }
-
   on(eventName: EventEnum, callback: (e: any) => void) {
     if (!this.listeners[eventName]) {
       this.listeners[eventName] = []
     }
     this.listeners[eventName]?.push(callback)
   }
-
   // 判断点是否在路径区域内
   isPointInRegion(x: number, y: number): boolean {
     return this.ctx.isPointInPath(this.path, x, y)
   }
-
 }
 
 /** 矩形 */
