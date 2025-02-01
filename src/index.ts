@@ -11,6 +11,7 @@ class CanvasAnnotate {
   width = 0
   height = 0
   private isDrawing = false
+  private handleClick: (e: MouseEvent) => void = () => { }
   constructor(canvasId: string, imgUrl: string) {
     this.canvas = document.getElementById(canvasId) as HTMLCanvasElement ?? null
     this.ctx = this.canvas.getContext('2d')
@@ -39,12 +40,17 @@ class CanvasAnnotate {
     this.width = this.img.width * scale
     this.height = this.img.height * scale
 
+    // 清除画布
+    this.ctx.clearRect(0, 0, this.width, this.height)
+    // 绘制图片作为背景
+    this.ctx.drawImage(this.img, 0, 0, this.width, this.height)
+
     // 添加要绘制的图形
     const rect0 = new Rectangle('rect0', this.ctx!, defaultColor, 0, 0, 100, 100)
     const rect1 = new Rectangle('rect1', this.ctx!, defaultColor, 300, 0, 100, 100)
     const circle0 = new CircleCircle('circle0', this.ctx!, defaultColor, 200, 200, 50, 0, 2 * Math.PI)
     this.shapes.push(rect0, rect1, circle0)
-    // 绘制
+    // 绘制图形
     this.draw()
 
     // 添加事件回调
@@ -69,12 +75,8 @@ class CanvasAnnotate {
   draw() {
     if (this.isDrawing) return
     this.isDrawing = true
-    // 清除画布
-    this.ctx?.clearRect(0, 0, this.width, this.height)
-    this.ctx!.drawImage(this.img, 0, 0, this.width, this.height)
     this.shapes.forEach(shape => {
-      this.ctx!.fillStyle = shape.color
-      this.ctx!.fill(shape.path)
+      shape.draw()
     })
     this.isDrawing = false
   }
@@ -84,19 +86,22 @@ class CanvasAnnotate {
       console.error('Canvas is null')
       return
     }
-    const handleClick = (e: MouseEvent) => {
+    this.handleClick = (e: MouseEvent) => {
       this.shapes.forEach((shape) => {
         const listeners = shape.listeners[EventEnum.CLICK]
         if (listeners) {
           listeners.forEach((listener) => listener(e))
         }
       })
-      this.draw()
     }
-    this.canvas.addEventListener(EventEnum.CLICK, handleClick)
-    this.canvas.addEventListener('destroy', () => {
-      this.canvas?.removeEventListener(EventEnum.CLICK, handleClick)
-    })
+    this.canvas.addEventListener(EventEnum.CLICK, this.handleClick)
+  }
+
+  // 供外部调用的 destroy 方法
+  destroy() {
+    if (this.canvas && this.handleClick) {
+      this.canvas.removeEventListener(EventEnum.CLICK, this.handleClick)
+    }
   }
 }
 
@@ -108,8 +113,16 @@ class BaseShape {
     public ctx: CanvasRenderingContext2D,
     public color: string
   ) { }
+
+  // 路径
   get path(): Path2D {
     return new Path2D()
+  }
+
+  // 绘制
+  draw() {
+    this.ctx.fillStyle = this.color
+    this.ctx.fill(this.path)
   }
   on(eventName: EventEnum, callback: (e: any) => void) {
     if (!this.listeners[eventName]) {
@@ -131,7 +144,12 @@ class Rectangle extends BaseShape {
         const x = e.offsetX
         const y = e.offsetY
         const isInRegion = this.isPointInRegion(x, y)
-        this.color = isInRegion ? 'red' : defaultColor
+        const oldColor = this.color
+        const newColor = isInRegion ? 'red' : defaultColor
+        if (oldColor !== newColor) {
+          this.color = newColor
+          this.draw()
+        }
       }
     ]
   }
