@@ -51,7 +51,7 @@ class CanvasAnnotate {
     const circle0 = new CircleCircle('circle0', this.ctx!, defaultColor, 200, 200, 50, 0, 2 * Math.PI)
     this.shapes.push(rect0, rect1, circle0)
     // 绘制图形
-    this.draw()
+    this.drawGraphics()
 
     // 添加事件回调
     this.addShapeClickListener(rect0)
@@ -72,7 +72,7 @@ class CanvasAnnotate {
     })
   }
 
-  draw() {
+  drawGraphics() {
     if (this.isDrawing) return
     this.isDrawing = true
     this.shapes.forEach(shape => {
@@ -105,7 +105,7 @@ class CanvasAnnotate {
   }
 }
 
-/** 所有形状的抽象类 */
+/** 所有形状的基类 */
 class BaseShape {
   listeners: { [key in EventEnum]?: ((e: MouseEvent) => void)[] } = {}
   constructor(
